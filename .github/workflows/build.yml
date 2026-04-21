@@ -19,8 +19,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             cmake ninja-build \
-            libfcitx5-dev \
-            fcitx5-dev \
+            libfcitx5core-dev \
+            libfcitx5utils-dev \
+            libfcitx5config-dev \
             extra-cmake-modules \
             pkg-config \
             wget
