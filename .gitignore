@@ -1,0 +1,6 @@
+build/
+output/
+*.tar.xz
+*.tar.gz
+qtbase-everywhere-src-*/
+fcitx5-qt-*/

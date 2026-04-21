@@ -1,0 +1,87 @@
+name: Build libfcitx5platforminputcontextplugin
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build \
+            libfcitx5-dev \
+            fcitx5-dev \
+            extra-cmake-modules \
+            pkg-config \
+            wget
+
+      - name: Download Qt 6.8.2 source
+        run: |
+          wget -q https://download.qt.io/official_releases/qt/6.8/6.8.2/submodules/qtbase-everywhere-src-6.8.2.tar.xz
+          tar -xf qtbase-everywhere-src-6.8.2.tar.xz
+
+      - name: Install Qt 6.8.2 build dependencies
+        run: |
+          sudo apt-get install -y \
+            libgl-dev libglu1-mesa-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev \
+            libx11-dev libx11-xcb-dev libxcb1-dev \
+            libxcb-glx0-dev libxcb-icccm4-dev libxcb-image0-dev \
+            libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
+            libxcb-shape0-dev libxcb-shm0-dev libxcb-sync-dev \
+            libxcb-util-dev libxcb-xfixes0-dev libxcb-xinerama0-dev \
+            libxcb-xkb-dev libxrender-dev \
+            libdbus-1-dev libfontconfig1-dev libfreetype-dev \
+            libharfbuzz-dev libicu-dev libssl-dev \
+            clang
+
+      - name: Build Qt 6.8.2
+        run: |
+          cd qtbase-everywhere-src-6.8.2
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$HOME/qt682 \
+            -DQT_BUILD_EXAMPLES=OFF \
+            -DQT_BUILD_TESTS=OFF
+          cmake --build build --parallel $(nproc)
+          cmake --install build
+
+      - name: Download fcitx5 Qt plugin source
+        run: |
+          wget -q https://download.fcitx-im.org/fcitx5/fcitx5-qt/fcitx5-qt-5.1.7.tar.xz
+          tar -xf fcitx5-qt-5.1.7.tar.xz
+
+      - name: Build fcitx5-qt plugin
+        run: |
+          cd fcitx5-qt-5.1.7
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH=$HOME/qt682 \
+            -DENABLE_QT4=OFF \
+            -DENABLE_QT5=OFF \
+            -DENABLE_QT6=ON \
+            -DWITH_FCITX_PLUGIN_ONLY=ON
+          cmake --build build --parallel $(nproc)
+
+      - name: Collect artifact
+        run: |
+          mkdir -p output
+          find fcitx5-qt-5.1.7/build -name "libfcitx5platforminputcontextplugin.so" -exec cp {} output/ \;
+          ls -lh output/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libfcitx5platforminputcontextplugin-qt682
+          path: output/libfcitx5platforminputcontextplugin.so
+          if-no-files-found: error
