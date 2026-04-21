@@ -99,21 +99,16 @@ jobs:
 
       - name: Build fcitx5-qt plugin
         run: |
-          cd fcitx5-qt-5.1.7
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH=${{ env.QT_INSTALL_PREFIX }} \
-            -DENABLE_QT4=OFF \
-            -DENABLE_QT5=OFF \
-            -DENABLE_QT6=ON \
-            -DWITH_FCITX_PLUGIN_ONLY=ON \
-            -DENABLE_WAYLAND=OFF
+            fcitx5-qt-5.1.7/qt6/platforminputcontext
           cmake --build build --parallel $(nproc)
 
       - name: Collect artifact
         run: |
           mkdir -p output
-          find fcitx5-qt-5.1.7/build -name "libfcitx5platforminputcontextplugin.so" -exec cp {} output/ \;
+          find build -name "libfcitx5platforminputcontextplugin.so" -exec cp {} output/ \;
           ls -lh output/
 
       - name: Upload artifact
