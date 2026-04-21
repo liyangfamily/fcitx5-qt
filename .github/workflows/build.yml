@@ -78,7 +78,8 @@ jobs:
             -DENABLE_QT4=OFF \
             -DENABLE_QT5=OFF \
             -DENABLE_QT6=ON \
-            -DWITH_FCITX_PLUGIN_ONLY=ON
+            -DWITH_FCITX_PLUGIN_ONLY=ON \
+            -DENABLE_WAYLAND=OFF
           cmake --build build --parallel $(nproc)
 
       - name: Collect artifact
