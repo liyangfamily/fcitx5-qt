@@ -11,25 +11,23 @@ env:
   QT_INSTALL_PREFIX: /home/runner/qt682
 
 jobs:
-  build:
+  build-qt:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Cache Qt ${{ env.QT_VERSION }}
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.QT_INSTALL_PREFIX }}
+          key: qt-${{ env.QT_VERSION }}-ubuntu-24.04
 
-      - name: Install dependencies
+      - name: Install Qt build dependencies
+        if: steps.cache-qt.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             cmake ninja-build \
-            libfcitx5core-dev \
-            libfcitx5utils-dev \
-            libfcitx5config-dev \
-            extra-cmake-modules \
-            pkg-config \
-            gettext \
-            wget \
             libgl-dev libglu1-mesa-dev \
             libxkbcommon-dev libxkbcommon-x11-dev \
             libx11-dev libx11-xcb-dev libxcb1-dev \
@@ -39,14 +37,8 @@ jobs:
             libxcb-util-dev libxcb-xfixes0-dev libxcb-xinerama0-dev \
             libxcb-xkb-dev libxrender-dev \
             libdbus-1-dev libfontconfig1-dev libfreetype-dev \
-            libharfbuzz-dev libicu-dev libssl-dev
-
-      - name: Cache Qt ${{ env.QT_VERSION }}
-        id: cache-qt
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.QT_INSTALL_PREFIX }}
-          key: qt-${{ env.QT_VERSION }}-ubuntu-24.04
+            libharfbuzz-dev libicu-dev libssl-dev \
+            wget
 
       - name: Download Qt source
         if: steps.cache-qt.outputs.cache-hit != 'true'
@@ -65,6 +57,39 @@ jobs:
             -DQT_BUILD_TESTS=OFF
           cmake --build build --parallel $(nproc)
           cmake --install build
+
+  build-plugin:
+    runs-on: ubuntu-24.04
+    needs: build-qt
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore Qt ${{ env.QT_VERSION }} cache
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.QT_INSTALL_PREFIX }}
+          key: qt-${{ env.QT_VERSION }}-ubuntu-24.04
+
+      - name: Fail if Qt cache missing
+        if: steps.cache-qt.outputs.cache-hit != 'true'
+        run: |
+          echo "Qt cache not found, please re-run the build-qt job first."
+          exit 1
+
+      - name: Install plugin build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build \
+            libfcitx5core-dev \
+            libfcitx5utils-dev \
+            libfcitx5config-dev \
+            extra-cmake-modules \
+            pkg-config \
+            gettext
 
       - name: Clone fcitx5-qt source
         run: git clone --depth=1 --branch 5.1.7 https://github.com/fcitx/fcitx5-qt.git fcitx5-qt-5.1.7
