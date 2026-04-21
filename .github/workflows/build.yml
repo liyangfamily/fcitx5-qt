@@ -24,6 +24,7 @@ jobs:
             libfcitx5config-dev \
             extra-cmake-modules \
             pkg-config \
+            gettext \
             wget
 
       - name: Download Qt 6.8.2 source
