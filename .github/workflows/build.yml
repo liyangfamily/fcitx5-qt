@@ -59,8 +59,7 @@ jobs:
 
       - name: Download fcitx5 Qt plugin source
         run: |
-          wget -q https://download.fcitx-im.org/fcitx5/fcitx5-qt/fcitx5-qt-5.1.7.tar.xz
-          tar -xf fcitx5-qt-5.1.7.tar.xz
+          git clone --depth=1 --branch 5.1.7 https://github.com/fcitx/fcitx5-qt.git fcitx5-qt-5.1.7
 
       - name: Build fcitx5-qt plugin
         run: |
