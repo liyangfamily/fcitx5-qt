@@ -1,0 +1,28 @@
+.github/workflows/build.yml
+  970733d117bfdb80 1-87
+.gitignore
+  970733d117bfdb80 1-6
+README.md
+  970733d117bfdb80 1-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.6",
+  "base_commit_sha": "b18a8d6231fcb589644c2a8304a0121634552774",
+  "prompts": {
+    "970733d117bfdb80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91668ca0-902d-49f4-97e0-40aff98a43fa",
+        "model": "claude-sonnet-4.6"
+      },
+      "human_author": "liyang6457",
+      "messages": [],
+      "total_additions": 125,
+      "total_deletions": 0,
+      "accepted_lines": 125,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/2bc6d2577e3b64ffa3d21c0187f232ba0c42b7114009cd2f8929627a53730431"
+    }
+  }
+}
