@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  QT_VERSION: 6.8.2
+  QT_INSTALL_PREFIX: /home/runner/qt682
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -25,16 +29,7 @@ jobs:
             extra-cmake-modules \
             pkg-config \
             gettext \
-            wget
-
-      - name: Download Qt 6.8.2 source
-        run: |
-          wget -q https://download.qt.io/official_releases/qt/6.8/6.8.2/submodules/qtbase-everywhere-src-6.8.2.tar.xz
-          tar -xf qtbase-everywhere-src-6.8.2.tar.xz
-
-      - name: Install Qt 6.8.2 build dependencies
-        run: |
-          sudo apt-get install -y \
+            wget \
             libgl-dev libglu1-mesa-dev \
             libxkbcommon-dev libxkbcommon-x11-dev \
             libx11-dev libx11-xcb-dev libxcb1-dev \
@@ -44,30 +39,42 @@ jobs:
             libxcb-util-dev libxcb-xfixes0-dev libxcb-xinerama0-dev \
             libxcb-xkb-dev libxrender-dev \
             libdbus-1-dev libfontconfig1-dev libfreetype-dev \
-            libharfbuzz-dev libicu-dev libssl-dev \
-            clang
+            libharfbuzz-dev libicu-dev libssl-dev
 
-      - name: Build Qt 6.8.2
+      - name: Cache Qt ${{ env.QT_VERSION }}
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.QT_INSTALL_PREFIX }}
+          key: qt-${{ env.QT_VERSION }}-ubuntu-24.04
+
+      - name: Download Qt source
+        if: steps.cache-qt.outputs.cache-hit != 'true'
         run: |
-          cd qtbase-everywhere-src-6.8.2
+          wget -q https://download.qt.io/official_releases/qt/6.8/${{ env.QT_VERSION }}/submodules/qtbase-everywhere-src-${{ env.QT_VERSION }}.tar.xz
+          tar -xf qtbase-everywhere-src-${{ env.QT_VERSION }}.tar.xz
+
+      - name: Build Qt ${{ env.QT_VERSION }}
+        if: steps.cache-qt.outputs.cache-hit != 'true'
+        run: |
+          cd qtbase-everywhere-src-${{ env.QT_VERSION }}
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=$HOME/qt682 \
+            -DCMAKE_INSTALL_PREFIX=${{ env.QT_INSTALL_PREFIX }} \
             -DQT_BUILD_EXAMPLES=OFF \
             -DQT_BUILD_TESTS=OFF
           cmake --build build --parallel $(nproc)
           cmake --install build
 
-      - name: Download fcitx5 Qt plugin source
-        run: |
-          git clone --depth=1 --branch 5.1.7 https://github.com/fcitx/fcitx5-qt.git fcitx5-qt-5.1.7
+      - name: Clone fcitx5-qt source
+        run: git clone --depth=1 --branch 5.1.7 https://github.com/fcitx/fcitx5-qt.git fcitx5-qt-5.1.7
 
       - name: Build fcitx5-qt plugin
         run: |
           cd fcitx5-qt-5.1.7
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH=$HOME/qt682 \
+            -DCMAKE_PREFIX_PATH=${{ env.QT_INSTALL_PREFIX }} \
             -DENABLE_QT4=OFF \
             -DENABLE_QT5=OFF \
             -DENABLE_QT6=ON \
