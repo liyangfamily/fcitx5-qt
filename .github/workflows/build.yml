@@ -8,76 +8,23 @@ on:
 
 env:
   QT_VERSION: 6.8.2
-  QT_INSTALL_PREFIX: /home/runner/qt682
 
 jobs:
-  build-qt:
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Cache Qt ${{ env.QT_VERSION }}
-        id: cache-qt
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.QT_INSTALL_PREFIX }}
-          key: qt-${{ env.QT_VERSION }}-ubuntu-24.04
-
-      - name: Install Qt build dependencies
-        if: steps.cache-qt.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            cmake ninja-build \
-            libgl-dev libglu1-mesa-dev \
-            libxkbcommon-dev libxkbcommon-x11-dev \
-            libx11-dev libx11-xcb-dev libxcb1-dev \
-            libxcb-glx0-dev libxcb-icccm4-dev libxcb-image0-dev \
-            libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
-            libxcb-shape0-dev libxcb-shm0-dev libxcb-sync-dev \
-            libxcb-util-dev libxcb-xfixes0-dev libxcb-xinerama0-dev \
-            libxcb-xkb-dev libxrender-dev \
-            libdbus-1-dev libfontconfig1-dev libfreetype-dev \
-            libharfbuzz-dev libicu-dev libssl-dev \
-            wget
-
-      - name: Download Qt source
-        if: steps.cache-qt.outputs.cache-hit != 'true'
-        run: |
-          wget -q https://download.qt.io/official_releases/qt/6.8/${{ env.QT_VERSION }}/submodules/qtbase-everywhere-src-${{ env.QT_VERSION }}.tar.xz
-          tar -xf qtbase-everywhere-src-${{ env.QT_VERSION }}.tar.xz
-
-      - name: Build Qt ${{ env.QT_VERSION }}
-        if: steps.cache-qt.outputs.cache-hit != 'true'
-        run: |
-          cd qtbase-everywhere-src-${{ env.QT_VERSION }}
-          cmake -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=${{ env.QT_INSTALL_PREFIX }} \
-            -DQT_BUILD_EXAMPLES=OFF \
-            -DQT_BUILD_TESTS=OFF
-          cmake --build build --parallel $(nproc)
-          cmake --install build
-
   build-plugin:
     runs-on: ubuntu-24.04
-    needs: build-qt
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore Qt ${{ env.QT_VERSION }} cache
-        id: cache-qt
-        uses: actions/cache@v4
+      - name: Install Qt ${{ env.QT_VERSION }}
+        uses: jurplel/install-qt-action@v4
         with:
-          path: ${{ env.QT_INSTALL_PREFIX }}
-          key: qt-${{ env.QT_VERSION }}-ubuntu-24.04
-
-      - name: Fail if Qt cache missing
-        if: steps.cache-qt.outputs.cache-hit != 'true'
-        run: |
-          echo "Qt cache not found, please re-run the build-qt job first."
-          exit 1
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          cache: true
 
       - name: Install plugin build dependencies
         run: |
@@ -101,8 +48,12 @@ jobs:
         run: |
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH=${{ env.QT_INSTALL_PREFIX }} \
-            fcitx5-qt-5.1.7/qt6/platforminputcontext
+            -DENABLE_QT4=OFF \
+            -DENABLE_QT5=OFF \
+            -DENABLE_QT6=ON \
+            -DWITH_FCITX_PLUGIN_ONLY=ON \
+            -DENABLE_WAYLAND=OFF \
+            fcitx5-qt-5.1.7
           cmake --build build --parallel $(nproc)
 
       - name: Collect artifact
